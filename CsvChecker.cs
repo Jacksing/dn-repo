@@ -1,12 +1,21 @@
-﻿using System;
+﻿/*
+ * Common checker for matrix data.
+ * 
+ * Supporting cell, row and whole matrix checks, and generate 
+ * a result view in the format of a html table.
+ * 
+ * Create by Jacksing 2016/03/05
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using TS = Rismo.Utils.Translation.TranslatedString;
+using TS = Jacksing.Utils.Translation.TranslatedString;
 using System.Text;
 using System.Diagnostics;
 
-namespace Rismo.DataSource.Checker
+namespace Jacksing.DataSource.Checker
 {
     //public delegate bool CellCheckerActionEventHandler(string value, out string message);
     //public delegate bool RowCheckerActionEventHandler(string[] cells, out string messge);
@@ -105,7 +114,7 @@ namespace Rismo.DataSource.Checker
 
             if (this.MaxLength.HasValue && this.MaxLength.Value < content.Length)
             {
-                errorList.Add(string.Format((TS)"Length Error, <{0}>({1}) is longer than {2}", content, content.Length, MaxLength));
+                errorList.Add(string.Format((TS)"Length Error, \"{0}\"(Length:{1}) is longer than {2}", content, content.Length, MaxLength));
                 if (!this.ContinueOnError)
                 {
                     errors = errorList.ToArray();
@@ -115,7 +124,7 @@ namespace Rismo.DataSource.Checker
             }
             if (this.MinLengh.HasValue && this.MinLengh.Value > content.Length)
             {
-                errorList.Add(string.Format((TS)"Length Error, <{0}>({1}) is shorter than {2}", content, content.Length, MinLengh));
+                errorList.Add(string.Format((TS)"Length Error, \"{0}\"(Length:{1}) is shorter than {2}", content, content.Length, MinLengh));
                 if (!this.ContinueOnError)
                 {
                     errors = errorList.ToArray();
@@ -124,7 +133,18 @@ namespace Rismo.DataSource.Checker
                 }
             }
 
-            return base.Valid(content, out errors, out warnings);
+            string[] baseErrors;
+            string[] baseWarnings;
+
+            var baseResult = base.Valid(content, out baseErrors, out baseWarnings);
+
+            errorList.AddRange(baseErrors);
+            warningList.AddRange(baseWarnings);
+
+            errors = errorList.ToArray();
+            warnings = warningList.ToArray();
+
+            return !(!baseResult || (errors.Length > 0 && !this.ContinueOnError));
         }
 
         //public bool Valid(string value, out string[] errors, out string[] warnings)
@@ -660,7 +680,7 @@ namespace Rismo.DataSource.Checker
             this._Concat(this.ErrorList, newResult.ErrorList);
         }
 
-        private List<string[]> SplitResult(bool getVerfied, bool includeWarning)
+        private List<string[]> SplitResult(bool getVerfied, bool includeWarning, Predicate<string[]> include, Predicate<string[]> exclude)
         {
             if (this.Content == null)
             {
@@ -681,7 +701,17 @@ namespace Rismo.DataSource.Checker
             var enumerator = this.Content.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                if (errorLineNumber.Contains(index++) != getVerfied)
+                bool extra = true;
+                if (include != null)
+                {
+                    extra = include(enumerator.Current);
+                }
+                if (exclude !=null)
+                {
+                    extra = !exclude(enumerator.Current);
+                }
+
+                if (errorLineNumber.Contains(index++) != getVerfied && extra)
                 {
                     result.Add(enumerator.Current);
                 }
@@ -690,23 +720,47 @@ namespace Rismo.DataSource.Checker
         }
 
         /// <summary>
-        /// Get content which has no error, warning contents will also be get while specified.
+        /// Get contents with no error, set `includeWarning = true` to get the warning contents included.
         /// </summary>
-        /// <param name="includeWarning">Whether return warning content.</param>
+        /// <param name="includeWarning">Whether to return warning content.</param>
         /// <returns></returns>
         public List<string[]> GetVerifiedContent(bool includeWarning = false)
         {
-            return this.SplitResult(true, includeWarning);
+            return this.SplitResult(true, includeWarning, null, null);
+        }
+
+        /// <summary>
+        /// Get contents with no error, set `includeWarning = true` to get the warning contents included.
+        /// </summary>
+        /// <param name="includeWarning">Whether to return warning content.</param>
+        /// <param name="include">Get specified contents included.</param>
+        /// <param name="exclude">Get specified contents excluded.</param>
+        /// <returns></returns>
+        public List<string[]> GetVerifiedContent(bool includeWarning, Predicate<string[]> include, Predicate<string[]> exclude)
+        {
+            return this.SplitResult(true, includeWarning, include, exclude);
         }
 
         /// <summary>
         /// Get error content, and warning content while specified.
         /// </summary>
-        /// <param name="includeWarning">Whether return warning content.</param>
+        /// <param name="includeWarning">Whether to return warning content.</param>
         /// <returns></returns>
         public List<string[]> GetContentiousContent(bool includeWarning = false)
         {
-            return this.SplitResult(false, includeWarning);
+            return this.SplitResult(false, includeWarning, null, null);
+        }
+
+        /// <summary>
+        /// Get error content, and warning content while specified.
+        /// </summary>
+        /// <param name="includeWarning">Whether to return warning content.</param>
+        /// <param name="include">Get specified contents included.</param>
+        /// <param name="exclude">Get specified contents excluded.</param>
+        /// <returns></returns>
+        public List<string[]> GetContentiousContent(bool includeWarning, Predicate<string[]> include, Predicate<string[]> exclude)
+        {
+            return this.SplitResult(false, includeWarning, include, exclude);
         }
     }
 
@@ -1225,11 +1279,14 @@ namespace Rismo.DataSource.Checker
 
         public bool Any()
         {
-            foreach (var item in _result)
+            if (_result != null)
             {
-                if (item.Any())
+                foreach (var item in _result)
                 {
-                    return true;
+                    if (item.Any())
+                    {
+                        return true;
+                    }
                 }
             }
             return false;
@@ -1291,7 +1348,7 @@ namespace Rismo.DataSource.Checker
             return resultViewer;
         }
 
-        public string ToTable(bool skipEmpty=true)
+        public string ToTable(bool skipEmpty=true, List<string> header = null)
         {
             // Todo: <jacksing> csv error/waring are not output to view result. add them in the future.
 
@@ -1317,6 +1374,13 @@ namespace Rismo.DataSource.Checker
                 else if (result.Name != null)
                 {
                     tableString.InsertDivisionRow(result.Name, colSpan);
+                }
+
+                if (header != null)
+                {
+                    tableString.BeginRow();
+                    header.ForEach(x => tableString.AddCell(x, null, null));
+                    tableString.EndRow(null, null);
                 }
 
                 this.BuildRows(tableString, result);

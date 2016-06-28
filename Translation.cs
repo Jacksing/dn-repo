@@ -1,4 +1,10 @@
-﻿using System;
+﻿/*
+ * Translation module for i18n.
+ * 
+ * Create by Jacksing 2016/04/21
+ */
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,9 +12,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Configuration;
-using TaxlabSession;
 
-namespace Rismo.Utils.Translation
+namespace Jacksing.Utils.Translation
 {
     public static class Extensions
     {
@@ -86,7 +91,12 @@ namespace Rismo.Utils.Translation
                     GetLcMessages().Add(s, "");
                 }
 
-                if (TaxlabPageBase.GetUserSession().CurrentLanguage == Language.CHN)
+                Func<string> getEnvironmentLanguage = () =>
+                {
+                    throw new NotImplementedException();
+                };
+
+                if (getEnvironmentLanguage() == "CN")
                 {
                     var translated = GetLcMessages()[s];
                     if (translated == "" && cs.Debug)
@@ -95,6 +105,10 @@ namespace Rismo.Utils.Translation
                     }
                     return translated;
                 }
+                return s;
+            }
+            catch
+            {
                 return s;
             }
             finally
@@ -114,7 +128,7 @@ namespace Rismo.Utils.Translation
 
     public class TranslatedString
     {
-        public string translatedString = null;
+        private string translatedString = null;
         public string OrignalString { get; private set; }
 
         public TranslatedString(string s)
@@ -134,6 +148,49 @@ namespace Rismo.Utils.Translation
         public static explicit operator TranslatedString(string s)
         {
             TranslatedString ts = new TranslatedString(s);
+            return ts;
+        }
+
+        public override string ToString()
+        {
+            return (string)this;
+        }
+    }
+
+    public class TranslatedBlock
+    {
+        private string translatedBlock = null;
+        public string OrignalBlock { get; private set; }
+
+        public TranslatedBlock(string s)
+        {
+            this.OrignalBlock = s;
+        }
+
+        public static implicit operator string(TranslatedBlock ts)
+        {
+            if (ts.translatedBlock == null)
+            {
+                List<string> matchStrings = new List<string>();
+                var translatedBlock = ts.OrignalBlock;
+
+                foreach (Match match in Regex.Matches(translatedBlock, "\\(TS\\){{(.*?)}}"))
+                {
+                    if (!matchStrings.Contains(match.Value))
+                    {
+                        translatedBlock = translatedBlock.Replace(match.Groups[0].Value, match.Groups[1].Value.Translate());
+                        matchStrings.Add(match.Value);
+                    }
+                }
+
+                ts.translatedBlock = translatedBlock;
+            }
+            return ts.translatedBlock;
+        }
+
+        public static explicit operator TranslatedBlock(string s)
+        {
+            TranslatedBlock ts = new TranslatedBlock(s);
             return ts;
         }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace Rismo.Utils
+namespace Jacksing.Utils
 {
     /// <summary>
     ///PopupDispatcher 的摘要说明
