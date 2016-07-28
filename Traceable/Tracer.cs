@@ -22,13 +22,21 @@ namespace Traceable
         }
     }
 
-    public interface TraceableObject
+    public interface Traceable
     {
         string Traced { get; set; }
     }
 
-    public abstract class Tracer<T> where T : TraceableObject
+    public abstract class Tracer<T> where T : Traceable
     {
+        public class CannotBackwardException: Exception
+        {
+            public override string Message
+            {
+                get { return "Cannot trace back."; }
+            }
+        }
+
         private Dictionary<string, List<T>> _traceCollection = new Dictionary<string, List<T>>();
 
         public Dictionary<string, List<T>> TraceCollection
@@ -36,20 +44,25 @@ namespace Traceable
             get { return _traceCollection; }
         }
 
+        protected virtual string NewTraceId()
+        {
+            return Guid.NewGuid().ToString();
+        }
+
         // Get all trace data that linked to trace.
         protected virtual List<T> GetTrace(string traceid)
         {
+            if (_traceCollection.Values.Any(x => x.Any(y => y.Traced == traceid)))
+            {
+                throw new CannotBackwardException();
+            }
+
             var trace = _traceCollection.Get(traceid, null);
             if (trace != null)
             {
                 _traceCollection.Remove(traceid);
             }
             return trace;
-        }
-
-        protected virtual string NewTraceId()
-        {
-            return Guid.NewGuid().ToString();
         }
 
         // Create a new trace id and make all the trace data
@@ -65,26 +78,34 @@ namespace Traceable
             return traceId;
         }
 
-        // Combine all trace data into one new trace data.
-        protected abstract T DoForward(List<T> objList);
+        protected abstract List<T> DoForward(List<T> objList);
 
-        public virtual T Forward(List<T> objList)
+        public virtual List<T> Forward(List<T> objList)
         {
-            var traceId = this.SaveTrace(objList);
-            var newObj = this.DoForward(objList.ToList());
-            newObj.Traced = traceId;
+            var newObjList = this.DoForward(objList.ToList());
 
-            return newObj;
+            var traceId = this.SaveTrace(objList);
+            newObjList.ForEach(x => x.Traced = traceId);
+
+            return newObjList;
         }
 
-        public T Forward(params T[] objArray)
+        public List<T> Forward(params T[] objArray)
         {
             return this.Forward(objArray.ToList());
         }
 
-        public virtual List<T> Backward(T obj)
+        protected abstract void DoBackward(string tracdid);
+
+        public virtual List<T> Backward(string tracdid)
         {
-            return this.GetTrace(obj.Traced);
+            this.DoBackward(tracdid);
+            return this.GetTrace(tracdid);
+        }
+
+        public List<T> Backward(T obj)
+        {
+            return this.Backward(obj.Traced);
         }
     }
 
@@ -92,38 +113,63 @@ namespace Traceable
     /// basic test
     /////////////////////////////////////////////////////////////
 
-    public class TestObj : List<string>, TraceableObject
+    public class TestObj : List<string>, Traceable
     {
         public string Traced { get; set; }
     }
 
     public class TestTracer : Tracer<TestObj>
     {
+        public int SeparateCopies = int.MinValue;
+
         protected override string NewTraceId()
         {
             return base.NewTraceId().Split('-')[0];
         }
 
-        protected override TestObj DoForward(List<TestObj> objList)
+        protected override List<TestObj> DoForward(List<TestObj> objList)
         {
             if (objList == null || objList.Count == 0)
             {
                 return null;
             }
 
-            var maxCount = objList.Max(x => x.Count);
-            TestObj ret = new TestObj();
-            ret.AddRange(Enumerable.Repeat("", maxCount));
+            // Do combination while get multi object, 
+            // and do separate while get single one.
 
-            objList.ForEach(x =>
+            if (objList.Count > 1)
             {
-                for (int i = 0; i < x.Count; i++)
-                {
-                    ret[i] = ret[i] + x[i];
-                }
-            });
+                var maxCount = objList.Max(x => x.Count);
+                TestObj ret = new TestObj();
+                ret.AddRange(Enumerable.Repeat("", maxCount));
 
-            return ret;
+                objList.ForEach(x =>
+                {
+                    for (int i = 0; i < x.Count; i++)
+                    {
+                        ret[i] = ret[i] + x[i];
+                    }
+                });
+
+                return new List<TestObj>() {ret};
+            }
+            else
+            {
+                List<TestObj> ret = new List<TestObj>();
+
+                for (int i = 0; i < SeparateCopies; i++)
+                {
+                    TestObj testObject = new TestObj();
+                    objList[0].ForEach(x => testObject.Add(string.Format("{0}{1}", x, i.ToString())));
+                    ret.Add(testObject);
+                }
+
+                return ret;
+            }
+        }
+
+        protected override void DoBackward(string tracdid)
+        {
         }
     }
 }
