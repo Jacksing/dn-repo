@@ -3,7 +3,7 @@ Useful common .net modules.
 
 
 #KuaiDiHundred.cs
----
+
 **Create an instance of `KuaiDiHundred` and then implement following three events for it:**
 
 	// You can initialize express number nor express company here.
@@ -22,4 +22,4 @@ Useful common .net modules.
 
 	kuaidiHundred.QueryExpressStatus(...)
 
-###やった、お楽しみに！
+**やった、お楽しみに！**
