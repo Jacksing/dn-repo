@@ -1,7 +1,7 @@
 ﻿/*
  * Translation module for i18n.
  * 
- * Create by Jacksing 2016/04/21
+ * Create by jackrole 2016/04/21
  */
 
 using System;
@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 using System.Web;
 using System.Web.Configuration;
 
-namespace Jacksing.Utils.Translation
+namespace Jackrole.Utils.Translation
 {
     public static class Extensions
     {

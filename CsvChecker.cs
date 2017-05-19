@@ -4,23 +4,23 @@
  * Supporting cell, row and whole matrix checks, and generate 
  * a result view in the format of a html table.
  * 
- * Create by Jacksing 2016/03/05
+ * Create by jackrole 2016/03/05
  */
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using TS = Jacksing.Utils.Translation.TranslatedString;
+using TS = jackrole.Utils.Translation.TranslatedString;
 using System.Text;
 using System.Diagnostics;
 
-namespace Jacksing.DataSource.Checker
+namespace Jackrole.DataSource.Checker
 {
     //public delegate bool CellCheckerActionEventHandler(string value, out string message);
     //public delegate bool RowCheckerActionEventHandler(string[] cells, out string messge);
     //public delegate bool MatrixCheckerActionEventHandler(List<string[]> matrix, out string message);
-    //public delegate bool RowCheckerActionXEventHandler<T>(string[] cells, out string messge, out T value);  // TODO: <jacksing> be generic in the future??
+    //public delegate bool RowCheckerActionXEventHandler<T>(string[] cells, out string messge, out T value);  // TODO: <jackrole> be generic in the future??
 
     public delegate bool CommonCheckerActionEventHandler<TContent>(TContent value, out string message);
 
@@ -215,7 +215,7 @@ namespace Jacksing.DataSource.Checker
         //}
 
         #region check methods
-        // Todo: <jacksing> this is for test, delete it in the future or add some common check methods here.
+        // Todo: <jackrole> this is for test, delete it in the future or add some common check methods here.
         public static bool IsLongDateTime(string value, out string message)
         {
             try
@@ -857,7 +857,7 @@ namespace Jacksing.DataSource.Checker
         }
 
         // clear cache data in valid progress.
-        //protected abstract void ClearCache();  // not used, because static cache can not be cleared by instance method. // TODO: <jacksing> implete it in the future.
+        //protected abstract void ClearCache();  // not used, because static cache can not be cleared by instance method. // TODO: <jackrole> implete it in the future.
 
         // check with pattern that configured in class.
         public CheckResult Valid(List<string[]> matrix)
@@ -995,7 +995,7 @@ namespace Jacksing.DataSource.Checker
         // the mapping of check is specified by each id of indexedMaxtrix.
         public CheckResult Valid(List<Dictionary<int, string[]>> indexedMaxtrix)
         {
-            // TODO: <jacksing> data of column can specifies which checker to check column itself.
+            // TODO: <jackrole> data of column can specifies which checker to check column itself.
             throw new NotImplementedException();
         }
     }
@@ -1350,7 +1350,7 @@ namespace Jacksing.DataSource.Checker
 
         public string ToTable(bool skipEmpty=true, List<string> header = null)
         {
-            // Todo: <jacksing> csv error/waring are not output to view result. add them in the future.
+            // Todo: <jackrole> csv error/waring are not output to view result. add them in the future.
 
             ResultTableBuilder tableString = new ResultTableBuilder();
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 
-namespace Jacksing.Utils
+namespace Jackrole.Utils
 {
     /// <summary>
     ///PopupDispatcher 的摘要说明
