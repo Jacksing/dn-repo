@@ -16,7 +16,7 @@ namespace Jackrole.Utils.Translation
       int idx = start;
       foreach (var item in items)
       {
-        yield return new PyEnumerate<T>() { Value = item, Index = idx };
+        yield return new PyEnumerate<T>() { Value = item, Index = idx++ };
       }
     }
 
