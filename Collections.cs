@@ -1,11 +1,22 @@
 /*
- * Util class simulates the python `enumerate`.
+ * Collection utils.
  * 
  * Create by jackrole 2017/05/19
  */
 
-namespace Jackrole.Utils.Translation
+namespace Jackrole.Utils.Collections
 {
+  //
+  // Util class simulates the python `enumerate`.
+  //
+  // Usage:
+  //
+  //   var fooList = new List<string>();
+  //   foreach (var enumerator in PyEnumerate<string>.Walk(fooList))
+  //   {
+  //     Console.WriteLine(enumerator.Value);
+  //     Console.WriteLine(enumerator.Index);
+  //   }
   public class PyEnumerate<T>
   {
     public int Index { get; set; }
@@ -28,12 +39,3 @@ namespace Jackrole.Utils.Translation
 
   public class PyEnumerate : PyEnumerate<object> { }
 }
-
-// // Usage
-// // --
-// var fooList = new List<string>();
-// foreach (var enumerator in PyEnumerate<string>.Walk(fooList))
-// {
-//   Console.WriteLine(enumerator.Value);
-//   Console.WriteLine(enumerator.Index);
-// }
